@@ -12,8 +12,37 @@ hg38 = http://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz
 
 pantro4 = http://hgdownload.cse.ucsc.edu/goldenPath/panTro4/bigZips/panTro4.fa.gz
 
-threads options
+"panTro4.fa" %> \out -> do
+  let src = out <.> "gz"
+  need [src]
+  cmd "gunzip" src
 
+"panTro4.fa.gz" %> \out -> do
+  cmd "wget" panTroUrl
+
+downloadRules unpackCmd url = do
+  want [unpacked]
+
+  packed %> \out -> do
+    cmd "wget" out
+
+  unpacked %> \out -> do
+    need [packed] 
+    cmd unpackCmd src
+
+where
+ packed = reverse $ takeWhile (/= '/') $ reverse url
+ unpacked = packed -<.> ""
+-- getCmd "gz" = "gunzip"
+-- getCmd "tar" = "gunzip"
+-- getCmd "zip" = "unzip"
+
+
+threads options
+note: requires more than 30GB ram to index and map.
+
+EXITING because of FATAL PARAMETER ERROR: limitGenomeGenerateRAM=31000000000is too small for your genome
+SOLUTION: please specify limitGenomeGenerateRAM not less than34085737173 and make that much RAM available
 Indexing:
 $ mkdir $indexDir  # requires 100gb 
 
@@ -25,21 +54,47 @@ $ mkdir $indexDir  # requires 100gb
 
 Mapping:
 
+--runThreadN
 --readFilesIn r1.fq r2.fq 
 --readFilesCommand gunzip -c / zcat
+--genomeDir indexDir
+// --outFileNamePrefix outdir/outfile
+// --outSAMtype BAM SortedByCoordinate
+
+"Aligned.out.sam"  %> \out -> do
+  runStar $ starOpts opts
 
 STAR (v2.5.1b) with:  hg38, (panTro4, 2011, UCSC)
--- drop unaligned reads
-
+-- drop unaligned reads (using samtools filter flag from pathdiscov)
+samtools view paired.bam -f 12 | cut -f1 | sort -u | awk '{print "@"$0}' > paired.unmap.id
+pathdiscov/host_map/bwa_filter_host.sh:53   https://github.com/VDBWRAIR/pathdiscov/pull/291/files#diff-8d4a24890c036d1e053b66a51f1ecf19R53
+-- will need to restore to fastq format as paired reads. 
+duplicate removal
+ > samtools rmdup?
 
 PriceSeqFilter [11] with the “-rnf 90” and “-rqf 85 0.98” settings.
 
-duplicate removal
- > samtools rmdup
+
+./PriceSource140408/PriceSeqFilter -fp $fwd $rev -rnf 90 -rqf 85 0.98 -op $fwd.filtered $rev.filtered
+-- output files must match fq extension
+["filtered/star-fwd.fq", "filtered/star-rev.fq"] &%> \[fwdO, revO] -> do
+  let (fwd, rev) = (basename fwdO, basename revO)
+  need [fwd, rev]
+  let priceSeqFilter = cmd "PriceSource140408/PriceSeqFilter"
+  priceSeqFilter "-fp" fwd rev "-rnf" 90 "-rqf" 85 0.98 "-op" fwdO revO
+
+
+data PSFopts = PSFopts { calledPercent :: Int <= 100
+                       , hiqhQualPercent :: Int <=100
+                       , highQualMin :: Float } -- <= 1 
 
 
 cd-hit-dup (v4.6.1) compress: reads at least 95% identical 
-“-rqf 85 0.98” settings. Reads passing quality control
+
+cdhit/cd-hit-auxtools/cd-hit-dup
+cd-hit-dup -i R1.fq -i2 R2.fq -o output -o2 output-R2 [other options] (for PE reads FASTQ)
+
+but how to compress? 
 
  Paired reads were then assessed for complexity by compression with the Lempel-Ziv-Welch algorithm [13]. Read pairs with a compression score <0.45 were subsequently removed.
 

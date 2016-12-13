@@ -1,0 +1,56 @@
+Sequencing data were analyzed using a rapid computa-
+tional pipeline developed by the DeRisi Laboratory to 
+classify MDS reads and identify potential pathogens by 
+comparison to the entire NCBI nucleotide reference 
+database [6]. The pipeline consists of the following steps.
+
+Diagnosing Balamuthia mandrillaris encephalitis with metagenomic deep sequencing
+
+STAR docs:  https://github.com/alexdobin/STAR/raw/master/doc/STARmanual.pdf
+annotations are reccomended (sjdbGTFfile or in mapping step)
+hg38 = http://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz
+
+pantro4 = http://hgdownload.cse.ucsc.edu/goldenPath/panTro4/bigZips/panTro4.fa.gz
+
+threads options
+
+Indexing:
+$ mkdir $indexDir  # requires 100gb 
+
+--runMode genomeGenerate  // says to run genome indices
+--runThreadN
+--genomeFastaFiles hg38 panTro4
+--sjdbOverhang (readLen - 1) -- or 100
+--genomeDir indexDir
+
+Mapping:
+
+--readFilesIn r1.fq r2.fq 
+--readFilesCommand gunzip -c / zcat
+
+STAR (v2.5.1b) with:  hg38, (panTro4, 2011, UCSC)
+-- drop unaligned reads
+
+
+PriceSeqFilter [11] with the “-rnf 90” and “-rqf 85 0.98” settings.
+
+duplicate removal
+ > samtools rmdup
+
+
+cd-hit-dup (v4.6.1) compress: reads at least 95% identical 
+“-rqf 85 0.98” settings. Reads passing quality control
+
+ Paired reads were then assessed for complexity by compression with the Lempel-Ziv-Welch algorithm [13]. Read pairs with a compression score <0.45 were subsequently removed.
+
+Bowtie2 (v2.2.4) (very-sensitive-local) with: hg38, panTro4
+-- drop all except Read pairs in which both members remained unmapped 
+GSNAPL (v2015-12-31) 
+ -- NCBI NT (downloaded July 2015, indexed with k = 16mers), and preprocessed to remove known repetitive sequences with RepeatMasker (vOpen-4.0) (www.repeatmasker.org).
+
+Rapsearch2:  NCBI non-redundant protein database (July 2015) 
+
+
+-- "preprocessed to remove known repetitive sequences with RepeatMasker" -- does this apply to nt/nr database? 
+-- NT was in some way de-duped
+

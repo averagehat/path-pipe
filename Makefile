@@ -29,3 +29,6 @@ $(BIN)/rapsearch:
 $(BIN)/cd-hit-dup:
 	git clone https://github.com/weizhongli/cdhit
 	cd cdhit/cd-hit-auxtools/ && $(MAKE) && ln -s $(PWD)/cd-hit-dup $(BIN)/cd-hit-dup
+
+$(BIN)/bowtie2:
+	conda install bowtie2

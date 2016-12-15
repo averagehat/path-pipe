@@ -31,6 +31,46 @@ bowtie2 -1 R1.fq -2 R2.fq --very-sensitive-local -x index [ -S outsam (otherwise
 -- then drop mapped / pair mapped using samtools
 
 ==== 
-GSNAPL (w/ RepeatMasker on NT)
+GSNAPL (w/ RepeatMasker on NT(??)) (or RepeatMasker is run on deduped reads?)
+  The gsnapl
+  program is equivalent to gmap, and is based on the same source code,
+  but is compiled to use 64-bit index files instead of 32-bit files.
+
+
+Index:
+$ mkdir -p gmap-db
+$ gmap_build -D gmap-db -d gmap-db -k 16 both.fasta
+
+Map:
+gsnap[l] -d gmap-db R1.fq R2.fq -A sam > output.sam
+(3rd column is what it mapped to)
+
+
 RapSearch2
 
+Index:
+$ prerapsearch -d nr.fasta -n rapsearch-nr-db
+
+Map:
+$ rapsearch -c R1.deduped.fq R2.deduped.fq  -d rapsearch-nr-db -o out.rapsearch
+$ rapsearch -q R1.deduped.fq -d rapsearch-nr-db -o out.rapsearch
+
+  paired info: http://www.cs.indiana.edu/pub/techreports/TR709.pdf
+  *.m8 file is like -m 8 output passed to blast. TSV with the following fields:
+# Fields: Query	Subject	identity	aln-len	mismatch	gap-openings	q.start	q.end	s.start	s.end	log(e-value)	bit-score
+rsDB %> \out -> do
+  need [ nr_fasta ]
+  cmd "prerapsearch" -d nr_fasta -n out
+
+[rsout <.> "m8", rsout <.> "aln" ] &%> \[_, _] -> do
+  need [rsDB, ddR1, ddR2] 
+  cmd "rapsearch" -q ddR1 -d rsDB -o rsout
+
+Ask michael:
+
+  what about repeatmasker?
+  rapsearch with paired reads? I notice the version isn't listed in the paper. only 2.12 seems to support paired-end reads.
+
+
+have to look up taxonomic information using gi.  where is that code?  https://gist.github.com/averagehat/d6461cb6ec147a5473827352acbf4a8a
+ -- different for NT and NR?

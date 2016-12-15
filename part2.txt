@@ -1,0 +1,36 @@
+cd-hit-dup -e 0.05  (drops 95% similar)
+cd-hit-dup -e 0.05 -i R1.fq -i2 R2.fq -o R1.deduped.fq -o2 R2.deduped.fq
+
+cdhit/cd-hit-auxtools/cd-hit-dup -i 947_S32_L001_R1_001_2013_12_17.fastq.filtered.fq -i2 947_S32_L001_R2_001_2013_12_17.fastq.filtered.fq -o R1.deduped.fq -o2 R2.deduped.fq -e 0.05
+
+drop all reads with compression score < 0.45
+
+http://web.cs.ucdavis.edu/~gusfield/cs224f09/lznotes.pdf
+
+The compression score, calculated as the difference in bytes between the original sequence and the compressed version, is inversely proportional to complexity
+
+For example, the P. falciparum genome contains a large number of low-complexity sequence elements as a result of a high frequency of continuous stretches of A and T nucleotides in both the non-coding and the coding regions. ArrayOligoSelector automatically detects such sequences by subjecting candidate oligonucleotide sequences to a lossless compression
+
+http://arrayoligosel.sourceforge.net/
+
+lzw on pypi
+
+http://www.7-zip.org/sdk.html
+
+http://stackoverflow.com/questions/6834388/basic-lzw-compression-help-in-python
+
+===== 
+bowtie (hostmap 2.0) 
+
+Index:
+bowtie2-build panTro4.fa,hg38.fa bowtie-index --threads 16 --large-index [ --seed 12 ] 
+
+Align:
+bowtie2 -1 R1.fq -2 R2.fq --very-sensitive-local -x index [ -S outsam (otherwise stdout) ]
+
+-- then drop mapped / pair mapped using samtools
+
+==== 
+GSNAPL (w/ RepeatMasker on NT)
+RapSearch2
+

@@ -66,11 +66,32 @@ rsDB %> \out -> do
   need [rsDB, ddR1, ddR2] 
   cmd "rapsearch" -q ddR1 -d rsDB -o rsout
 
+=====
+acc2tax
+
+NOTEs: 
+ the maximum GI (used to allocate memory) must be increased to match size of new NR.
+ found in last value of gi_taxid_prot.dmp + 1; note NR is bigger than NT(?)
+ done using sed, or can pass --entries when calling acc2tax
+acc2tax outputs taxinfo like kingdom -> species in form  <taxid>\t<kingdom>,<...>,<species>
+ -- sometimes species(...etc.?) is missing
+also: https://gist.github.com/averagehat/d6461cb6ec147a5473827352acbf4a8a
+
+Install:
+# $ sed 's/#define MAX_GI .*/#define MAX_GI 1114054124/' -i acc2tax/acc2tax.c
+$ cc -o acc2tax/acc2tax acc2tax/acc2tax.c
+Sometimes:
+$ wget ftp://ftp.ncbi.nih.gov/pub/taxonomy/gi_taxid_prot.dmp.gz  -O /media/VD_Research/databases/ncbi/taxonomy/gi_taxid_prot.dmp.gz
+$ gunzip /media/VD_Research/databases/ncbi/taxonomy/gi_taxid_prot.dmp.gz
+
+Usage:
+$ acc2tax/acc2tax --gi -i taxinfo.gi --protein -o out.tax --database /media/VD_Research/databases/ncbi/taxonomy/ --entries 1114054124
+
+$ acc2tax/acc2tax [ --gi | --accession ] -i taxinfo.gi [ --protein | --nucleotide ] -o out.tax --database /media/VD_Research/databases/ncbi/taxonomy/
+ # accession is default but is slower than GI.
+
 Ask michael:
 
   what about repeatmasker?
   rapsearch with paired reads? I notice the version isn't listed in the paper. only 2.12 seems to support paired-end reads.
 
-
-have to look up taxonomic information using gi.  where is that code?  https://gist.github.com/averagehat/d6461cb6ec147a5473827352acbf4a8a
- -- different for NT and NR?

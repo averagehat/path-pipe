@@ -35,15 +35,26 @@ GSNAPL (w/ RepeatMasker on NT(??)) (or RepeatMasker is run on deduped reads?)
   The gsnapl
   program is equivalent to gmap, and is based on the same source code,
   but is compiled to use 64-bit index files instead of 32-bit files.
-
-
+  supposedly MD and NM tags are enough to show edit distance
+  maybe possible to calculate pid from md tag; note that cigar strings M means both match and mismatch
+  https://github.com/samtools/htsjdk/blob/58f4154e037a5721d6f534050e0765d49b655b1f/src/main/java/htsjdk/samtools/util/SequenceUtil.java#L513
+    -- but no countMismatches that doesn't require reference sequence
+   SNP-tolerant alignment in GSNAP
+  gsnap default output also has the following: start:0..end:0,matches:216,sub:1	segs:1,align_score:1,mapq:39,method:sa	pair_score:2,insert_length:217
+  
 Index:
-$ mkdir -p gmap-db
-$ gmap_build -D gmap-db -d gmap-db -k 16 both.fasta
+$ blastdbcmd -db /media/VD_Research/databases/ncbi/blast/nt/nt -entry all | head -n 300 > nt-small.fasta
+$ mkdir -p gmap-conf  # gmap-conf needed to pass to -D or else goes into share dir...
+$ gmap_build -D gmap-conf -d gmap-db -k 16 nt-small.fasta
 
 Map:
 gsnap[l] -d gmap-db R1.fq R2.fq -A sam > output.sam
+gsnapl -d gmap-db R1.fq R2.fq -A sam > output.sam
 (3rd column is what it mapped to)
+
+
+2098  [2016-12-16 15:26:31] gmap_build -d ntsmall -D gmapconf -k 16 nt-small.fasta
+2099  [2016-12-16 15:40:28] gsnap -d ntsmall R1.deduped.fq R2.deduped.fq -A sam
 
 
 RapSearch2
@@ -82,9 +93,11 @@ also: https://gist.github.com/averagehat/d6461cb6ec147a5473827352acbf4a8a
    merge m8 and taxa.tsv
  for GSNAP, do the same but have to parse SAM file before merging with taxa.tsv
 
+
+
 Install:
 
-# $ sed 's/#define MAX_GI .*/#define MAX_GI 1114054124/' -i acc2tax/acc2tax.c
+# sed 's/#define MAX_GI .*/#define MAX_GI 1114054124/' -i acc2tax/acc2tax.c # not needed see below
 $ cc -o acc2tax/acc2tax acc2tax/acc2tax.c
 Sometimes:
 $ wget ftp://ftp.ncbi.nih.gov/pub/taxonomy/gi_taxid_prot.dmp.gz  -O /media/VD_Research/databases/ncbi/taxonomy/gi_taxid_prot.dmp.gz
@@ -101,3 +114,17 @@ Ask michael:
   what about repeatmasker?
   rapsearch with paired reads? I notice the version isn't listed in the paper. only 2.12 seems to support paired-end reads.
 
+
+### TODO:
+[ ] gsnap/m8 > taxa automate (awk?)
+[ ] gsnap PID (?)
+[ ] LZW filter
+  [x] implement
+  [ ] get it to compile with LZW
+[ ] RepeatMasker
+  [x] email michael
+  [ ] implemenet
+NT filtering
+make NT database
+ -- [x] make NT.fasta
+ -- [ ] gmap_build
